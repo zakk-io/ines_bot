@@ -540,7 +540,7 @@ chatForm.addEventListener('submit', async (e) => {
 
     
 
-        const response = await fetch("http://127.0.0.1:5000/ines_bot", {
+        const response = await fetch("https://pl7zldq8-5000.uks1.devtunnels.ms/ines_bot", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
