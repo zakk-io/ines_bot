@@ -195,6 +195,47 @@ function updateTranslations() {
 // ===================================
 
 let currentSpeech = null;
+let kinyarwandaAudio = null;
+
+// Text-to-speech (ARABIC)
+function ArabicTTS(translated) { 
+  responsiveVoice.speak(translated, "Arabic Female", {
+    rate: 1,       
+    pitch: 1,      
+    volume: 1      
+  });
+}
+
+
+// Text-to-speech (KINYARWANDA)
+async function KinyarwandaTTS(translated) {
+  try {
+    const KINYARWANDA_TTS_URI = "http://127.0.0.1:8000/kinyarwanda-tts"
+
+    const response = await fetch(KINYARWANDA_TTS_URI, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ text: translated }),
+    });
+
+
+    const audioBuffer = await response.arrayBuffer();
+    const audioBlob = new Blob([audioBuffer], { type: "audio/wav" });
+    const audioUrl = URL.createObjectURL(audioBlob);
+
+    kinyarwandaAudio = new Audio(audioUrl);
+    kinyarwandaAudio.play();
+
+    kinyarwandaAudio.onended = () => {
+        kinyarwandaAudio = null;
+    };
+
+  } catch (err) {
+    console.error("❌ Error during Kinyarwanda TTS:", err);
+  }
+}
 
 // Add click event to all TTS buttons
 document.addEventListener('click', (e) => {
@@ -208,19 +249,36 @@ document.addEventListener('click', (e) => {
 });
 
 function toggleSpeech(button, text) {
+    if (responsiveVoice.isPlaying()) {
+        responsiveVoice.cancel();
+        return;
+    }
+
+    if (kinyarwandaAudio) {
+        kinyarwandaAudio.pause();
+        kinyarwandaAudio.currentTime = 0;
+        kinyarwandaAudio = null;
+        return;
+    }
+
+    if (currentSpeech && window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+        return;
+    }
+
+    if (currentLanguage === 'ar') {
+        ArabicTTS(text);
+        return;
+    }
+
+    if (currentLanguage === 'rw') {
+        KinyarwandaTTS(text);
+        return;
+    }
+
     // Check if speech synthesis is supported
     if (!('speechSynthesis' in window)) {
         alert('Sorry, your browser does not support text-to-speech.');
-        return;
-    }
-    
-    // If already speaking, stop
-    if (currentSpeech && window.speechSynthesis.speaking) {
-        window.speechSynthesis.cancel();
-        document.querySelectorAll('.tts-button').forEach(btn => {
-            btn.classList.remove('playing');
-        });
-        currentSpeech = null;
         return;
     }
     
